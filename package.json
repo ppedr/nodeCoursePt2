@@ -1,5 +1,5 @@
 {
-  "name": "nodeCoursePt2",
+  "name": "second",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@types/express": "^4.17.11",
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "knex": "^0.21.16",
+    "sqlite3": "^5.0.1"
   }
 }
