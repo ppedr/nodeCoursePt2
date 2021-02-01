@@ -1,33 +1,59 @@
 import { Router } from 'express';
+import { celebrate, Joi } from 'celebrate';
 import knex from '../database/connection';
 import multer from 'multer';
 import multerConfig from '../config/multer';
+import isAuthenticated from '../middlewares/isAuthenticated';
 
 const locationsRouter = Router();
 
 const upload = multer(multerConfig);
 
+locationsRouter.use(isAuthenticated);
+
 locationsRouter.get('/', async (request, response) => {
 
     const { city, uf, items } = request.query;
 
-    const parsedItems = <any> String(items).split(',').map(item => Number(item.trim()));
+    if(city && uf && items)
+    {
+        const parsedItems: Number[] = String(items).split(',').map(item => Number(item.trim()));
 
-    console.log(parsedItems);
+        const locations = await knex('locations')
+            .join('location_items', 'locations.id', '=', 'location_items.location_id')
+            .whereIn('location_items.item_id', parsedItems)
+            .where('city', String(city))
+            .where('uf', String(uf))
+            .distinct()
+            .select('locations.*');
 
-    const locations = await knex('locations')
-        .join('location_items', 'locations.id', '=', 'location_items.location_id')
-        .whereIn('location_items.item_id', parsedItems)
-        .where('city', String(city))
-        .where('uf', String(uf))
-        .distinct()
-        .select('locations.*');
+        return response.json(locations);
+    }
+    else
+    {
+        const locations = await knex('locations').select('*');
 
-    return response.json(locations);
+        return response.json(locations);
+    }
+
+    
 
 });
 
-locationsRouter.post('/', async (request, response) => {
+locationsRouter.post('/', celebrate({
+    body: Joi.object().keys({
+        name: Joi.string().required(),
+        email: Joi.string().required().email(),
+        whatsapp: Joi.string().required(),
+        latitude: Joi.number().required(),
+        longitude: Joi.number().required(),
+        city: Joi.string().required(),
+        uf: Joi.string().required().max(2),
+        items: Joi.array().items(Joi.number().required()).required(),
+    })
+}, {
+    abortEarly: false
+}), async (request, response) => {
 
     const { 
         name,
